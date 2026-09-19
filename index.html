@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feliz cumpleaños, Yeny</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Pinyon+Script&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+  :root {
+    --forest: #0E3A2E;
+    --forest-2: #14493A;
+    --ivory: #FAF6EE;
+    --paper-2: #EFE4D2;
+    --rose: #C9967F;
+    --rose-light: #E8C4B0;
+    --gold: #D9B96C;
+    --gold-light: #F3E2AE;
+    --gold-deep: #A9852F;
+    --ink: #1D3A31;
+
+    --vh: 100vh;
+    --w: min(86vw, 400px, calc((var(--vh) - 6rem) / 1.5));   /* ancho de la tarjeta */
+    --h: calc(var(--w) * 1.5);                                /* alto de la tarjeta  */
+    --ease: cubic-bezier(.22, .8, .24, 1);
+  }
+  @supports (height: 100dvh) { :root { --vh: 100dvh; } }
+
+  body {
+    background: radial-gradient(ellipse at 50% 35%, #14291F 0%, #070F0C 75%) fixed;
+    font-family: 'Jost', system-ui, sans-serif;
+    font-weight: 300;
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* ---------- Escenario ---------- */
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    margin-bottom: 3rem;
+    perspective: 1600px;
+  }
+
+  /* ---------- Interior de la tarjeta ---------- */
+  .inside {
+    position: absolute; inset: 0; z-index: 1;
+    background: var(--ivory);
+    border-radius: 4px;
+    box-shadow: 0 34px 60px -22px rgba(0, 0, 0, .85);
+    overflow: hidden;
+  }
+  .inside::after {                     /* filete dorado */
+    content: ""; position: absolute; inset: 9px; pointer-events: none;
+    border: 1px solid rgba(169, 133, 47, .55); border-radius: 2px;
+  }
+  .content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .5rem; padding: 1.4rem 1.25rem; text-align: center;
+    opacity: 0; transition: opacity .4s;
+  }
+  .is-open .content { opacity: 1; transition: opacity .8s .6s; }
+  .is-closing .content { opacity: 0; transition: opacity .4s; }
+
+  .close-card {
+    --bs-btn-color: var(--gold);
+    --bs-btn-hover-color: var(--gold-light);
+    --bs-btn-active-color: var(--gold-light);
+    --bs-btn-focus-shadow-rgb: 217, 185, 108;
+    position: absolute; left: 50%; bottom: -3rem; transform: translateX(-50%);
+    font-family: 'Jost', system-ui, sans-serif; font-weight: 300; font-size: 1rem;
+    letter-spacing: .04em; text-decoration: none; white-space: nowrap;
+  }
+  .close-card:hover { text-decoration: underline; }
+
+  .greeting {
+    font-family: 'Pinyon Script', cursive; font-weight: 400;
+    color: var(--forest-2); margin: 0; line-height: 1.05;
+  }
+  .greeting span { display: block; }
+  .greeting .l1 { font-size: calc(var(--w) * .1); }
+  .greeting .l2 { font-size: calc(var(--w) * .2); }
+
+  .wish {
+    margin: 0; max-width: 24ch;
+    font-size: max(.95rem, calc(var(--w) * .046));
+    line-height: 1.5; color: var(--ink);
+  }
+
+  .btn-wish {
+    --bs-btn-color: var(--forest-2);
+    --bs-btn-border-color: var(--rose);
+    --bs-btn-hover-color: var(--ivory);
+    --bs-btn-hover-bg: var(--forest-2);
+    --bs-btn-hover-border-color: var(--forest-2);
+    --bs-btn-active-color: var(--ivory);
+    --bs-btn-active-bg: var(--forest);
+    --bs-btn-active-border-color: var(--forest);
+    --bs-btn-focus-shadow-rgb: 201, 150, 127;
+    font-family: 'Jost', system-ui, sans-serif;
+    font-weight: 400; font-size: .95rem; letter-spacing: .03em;
+  }
+
+  /* ---------- Puertas (portada) ---------- */
+  .door {
+    position: absolute; top: 0; width: 50%; height: 100%; z-index: 2;
+    transform-style: preserve-3d;
+    transition: transform 1.5s var(--ease);
+  }
+  .door.left  { left: 0;  transform-origin: left center; }
+  .door.right { right: 0; transform-origin: right center; }
+  .is-open .door.left  { transform: rotateY(-100deg); }
+  .is-open .door.right { transform: rotateY(100deg); }
+
+  .face {
+    position: absolute; inset: 0; overflow: hidden;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .left  .face { border-radius: 4px 0 0 4px; }
+  .right .face { border-radius: 0 4px 4px 0; }
+  .face.back {
+    transform: rotateY(180deg);
+    background: linear-gradient(90deg, var(--paper-2), #F6EEDF);
+  }
+  .face.back::after {
+    content: ""; position: absolute; inset: 9px; border: 1px solid rgba(169, 133, 47, .5);
+  }
+
+  /* arte de la portada: el mismo dibujo completo, partido en dos puertas */
+  .art {
+    position: absolute; top: 0; left: 0; width: var(--w); height: 100%;
+    background: linear-gradient(160deg, #175442 0%, var(--forest) 55%, #0A2B22 100%);
+  }
+  .right .art { left: calc(var(--w) / -2); }
+
+  .frame {
+    position: absolute; inset: 14px;
+    border: 1px solid rgba(217, 185, 108, .8);
+  }
+  .frame-2 {
+    position: absolute; inset: 22px;
+    border: 1px solid rgba(217, 185, 108, .3);
+  }
+  .dia {
+    position: absolute; width: 8px; height: 8px;
+    background: var(--gold); transform: rotate(45deg);
+  }
+  .dia.tl { top: 10px; left: 10px; }
+  .dia.tr { top: 10px; right: 10px; }
+  .dia.bl { bottom: 10px; left: 10px; }
+  .dia.br { bottom: 10px; right: 10px; }
+
+  .mono {
+    position: absolute; left: 50%; top: 42%;
+    transform: translate(-50%, -50%);
+    font-family: 'Pinyon Script', cursive; font-weight: 400;
+    font-size: calc(var(--w) * .46); line-height: 1.1; padding: 0 .1em;
+    background: linear-gradient(120deg, var(--gold-light) 0%, var(--gold) 30%, var(--gold-deep) 48%, var(--gold-light) 65%, var(--gold) 100%);
+    background-size: 260% 100%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: foil 5.5s ease-in-out infinite;
+  }
+  .is-open .mono { animation: none; }
+  @keyframes foil {
+    0%, 100% { background-position: 100% 0; }
+    50%      { background-position: 0 0; }
+  }
+
+  .para {
+    position: absolute; left: 0; right: 0; top: 66%; text-align: center;
+    font-family: 'Pinyon Script', cursive; font-size: calc(var(--w) * .1);
+    color: var(--gold);
+  }
+  .orn {
+    position: absolute; left: 50%; top: 61%; width: 34%; height: 1px;
+    transform: translateX(-50%); background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  /* ---------- Botón de apertura y pista ---------- */
+  .open-btn {
+    position: absolute; inset: 0; z-index: 8;
+    background: none; border: 0; padding: 0; border-radius: 4px;
+  }
+  .open-btn:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 6px; }
+
+  .hint {
+    position: absolute; left: 0; right: 0; bottom: -2.6rem; margin: 0;
+    text-align: center; color: var(--gold); font-size: 1rem; letter-spacing: .04em;
+    transition: opacity .4s;
+  }
+  .is-open .hint { opacity: 0; }
+
+  /* ---------- Torta ---------- */
+  .cake { width: calc(var(--w) * .6); height: auto; overflow: visible; }
+  .cake .part { opacity: 0; transform-box: fill-box; transform-origin: center bottom; }
+  .is-open .cake .part { animation: drop .7s cubic-bezier(.2, .9, .3, 1.15) both; }
+  .is-open .cake .p1 { animation-delay: .9s; }
+  .is-open .cake .p2 { animation-delay: 1.1s; }
+  .is-open .cake .p3 { animation-delay: 1.3s; }
+  .is-open .cake .p4 { animation-delay: 1.5s; }
+  .is-open .cake .p5 { animation-delay: 1.7s; }
+  @keyframes drop {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .cake .out {
+    transform-box: fill-box; transform-origin: center bottom;
+    transition: opacity .5s, transform .5s;
+  }
+  .cake.blown .out { opacity: 0; transform: scale(.3) translateY(-4px); }
+
+  .flame {
+    transform-box: fill-box; transform-origin: 50% 100%;
+    animation: flicker 1.4s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { transform: scale(1, 1) rotate(-1deg); }
+    25%      { transform: scale(.94, 1.08) rotate(1.5deg); }
+    50%      { transform: scale(1.04, .95) rotate(-1.5deg); }
+    75%      { transform: scale(.97, 1.06) rotate(1deg); }
+  }
+
+  /* ---------- Destellos dorados al abrir ---------- */
+  .sparks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .spark {
+    position: absolute; border-radius: 50%;
+    width: var(--s); height: var(--s); background: var(--c);
+    box-shadow: 0 0 8px 1px var(--c);
+    opacity: 0;
+    animation: rise var(--d) ease-out var(--dl) forwards;
+  }
+  @keyframes rise {
+    0%   { opacity: 0; transform: translate(0, 0) scale(.4); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); }
+  }
+
+  /* ---------- Globos ---------- */
+  .balloons { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+  .balloons.back  { z-index: 0; }     /* detrás de la carta */
+  .balloons.front { z-index: 20; }    /* delante de la carta */
+
+  .balloon {
+    position: absolute; top: 100%; width: var(--bw);
+    animation: ascend var(--dur) cubic-bezier(.3, .1, .45, 1) var(--dl) both;
+  }
+  @keyframes ascend {
+    from { transform: translateY(0); }
+    to   { transform: translateY(calc(-100vh - 320px)); }
+  }
+
+  .balloon .b {
+    position: relative;
+    width: var(--bw); height: calc(var(--bw) * 1.22);
+    border-radius: 50% 50% 48% 48% / 58% 58% 42% 42%;
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 24%),
+      var(--c);
+    box-shadow: inset -7px -10px 16px rgba(0, 0, 0, .2);
+    transform-origin: 50% calc(100% + 80px);          /* pivota desde el extremo del hilo */
+    animation: sway var(--sw) ease-in-out infinite alternate;
+  }
+  .balloon .b::before {                                /* nudo */
+    content: ""; position: absolute; left: 50%; top: calc(100% - 3px); margin-left: -5px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-bottom: 9px solid var(--c);
+  }
+  .balloon .b::after {                                 /* hilo */
+    content: ""; position: absolute; left: 50%; top: calc(100% + 5px);
+    width: 1px; height: 75px;
+    background: linear-gradient(rgba(255, 255, 255, .6), rgba(255, 255, 255, .08));
+  }
+  @keyframes sway {
+    from { transform: rotate(-5deg); }
+    to   { transform: rotate(5deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      animation-delay: 0s !important;
+      transition-duration: .01ms !important;
+      transition-delay: 0s !important;
+    }
+  }
+</style>
+</head>
+
+<body>
+<div class="balloons back" id="balloonsBack" aria-hidden="true"></div>
+
+<main class="d-flex align-items-center justify-content-center" style="min-height: var(--vh); padding: 1.5rem 0;">
+
+  <div class="stage" id="stage">
+
+    <!-- Interior -->
+    <div class="inside">
+      <div class="content" id="content" aria-hidden="true">
+
+        <svg class="cake" id="cake" viewBox="0 0 240 250" role="img" aria-label="Torta de tres pisos con tres velas encendidas">
+          <defs>
+            <linearGradient id="tier" x1="0" x2="1">
+              <stop offset="0"   stop-color="#EBDCC5"/>
+              <stop offset=".25" stop-color="#FFFDF8"/>
+              <stop offset=".75" stop-color="#FFFDF8"/>
+              <stop offset="1"   stop-color="#E9D9C0"/>
+            </linearGradient>
+            <radialGradient id="glow">
+              <stop offset="0" stop-color="#FFD87A" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#FFD87A" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- base tipo pedestal -->
+          <ellipse cx="120" cy="246" rx="34" ry="4" fill="#C9967F"/>
+          <rect x="114" y="232" width="12" height="14" fill="#C9967F"/>
+          <ellipse cx="120" cy="230" rx="104" ry="9" fill="#C9967F"/>
+          <ellipse cx="120" cy="226" rx="104" ry="9" fill="#E8C4B0"/>
+
+          <!-- piso inferior -->
+          <g class="part p1">
+            <rect x="30" y="170" width="180" height="56" rx="8" fill="url(#tier)"/>
+            <rect x="30" y="192" width="180" height="8" fill="#14493A"/>
+            <rect x="30" y="191" width="180" height="1.2" fill="#D9B96C"/>
+            <rect x="30" y="200" width="180" height="1.2" fill="#D9B96C"/>
+            <g fill="#E8C4B0" stroke="#C9967F" stroke-width=".5">
+              <circle cx="42"  cy="218" r="2.4"/><circle cx="55"  cy="218" r="2.4"/>
+              <circle cx="68"  cy="218" r="2.4"/><circle cx="81"  cy="218" r="2.4"/>
+              <circle cx="94"  cy="218" r="2.4"/><circle cx="107" cy="218" r="2.4"/>
+              <circle cx="120" cy="218" r="2.4"/><circle cx="133" cy="218" r="2.4"/>
+              <circle cx="146" cy="218" r="2.4"/><circle cx="159" cy="218" r="2.4"/>
+              <circle cx="172" cy="218" r="2.4"/><circle cx="185" cy="218" r="2.4"/>
+              <circle cx="198" cy="218" r="2.4"/>
+            </g>
+          </g>
+
+          <!-- piso medio -->
+          <g class="part p2">
+            <rect x="54" y="124" width="132" height="48" rx="8" fill="url(#tier)"/>
+            <rect x="54" y="145" width="132" height="7" fill="#14493A"/>
+            <rect x="54" y="144" width="132" height="1.2" fill="#D9B96C"/>
+            <rect x="54" y="152" width="132" height="1.2" fill="#D9B96C"/>
+            <g fill="#E8C4B0" stroke="#C9967F" stroke-width=".5">
+              <circle cx="64"  cy="165" r="2.2"/><circle cx="78"  cy="165" r="2.2"/>
+              <circle cx="92"  cy="165" r="2.2"/><circle cx="106" cy="165" r="2.2"/>
+              <circle cx="120" cy="165" r="2.2"/><circle cx="134" cy="165" r="2.2"/>
+              <circle cx="148" cy="165" r="2.2"/><circle cx="162" cy="165" r="2.2"/>
+              <circle cx="176" cy="165" r="2.2"/>
+            </g>
+          </g>
+
+          <!-- piso superior y flores -->
+          <g class="part p3">
+            <rect x="80" y="84" width="80" height="42" rx="7" fill="url(#tier)"/>
+            <rect x="80" y="101" width="80" height="6" fill="#14493A"/>
+            <rect x="80" y="100" width="80" height="1.2" fill="#D9B96C"/>
+            <rect x="80" y="107" width="80" height="1.2" fill="#D9B96C"/>
+
+            <g transform="translate(58 128)">
+              <ellipse cx="-7" cy="3" rx="7" ry="3" transform="rotate(-25 -7 3)" fill="#2E6B57"/>
+              <ellipse cx="7"  cy="3" rx="7" ry="3" transform="rotate(25 7 3)"  fill="#2E6B57"/>
+              <circle cx="-3" cy="-1" r="5"   fill="#E8C4B0"/>
+              <circle cx="4"  cy="-3" r="4.2" fill="#D9A58F"/>
+              <circle cx="0"  cy="2"  r="3.6" fill="#F3D9C9"/>
+              <circle cx="-3" cy="-1" r="1.6" fill="#C9967F"/>
+            </g>
+            <g transform="translate(192 174)">
+              <ellipse cx="-7" cy="3" rx="7" ry="3" transform="rotate(-25 -7 3)" fill="#2E6B57"/>
+              <ellipse cx="7"  cy="3" rx="7" ry="3" transform="rotate(25 7 3)"  fill="#2E6B57"/>
+              <circle cx="-3" cy="-1" r="5"   fill="#E8C4B0"/>
+              <circle cx="4"  cy="-3" r="4.2" fill="#D9A58F"/>
+              <circle cx="0"  cy="2"  r="3.6" fill="#F3D9C9"/>
+              <circle cx="-3" cy="-1" r="1.6" fill="#C9967F"/>
+            </g>
+          </g>
+
+          <!-- velas -->
+          <g class="part p4">
+            <line x1="104" y1="55" x2="104" y2="58" stroke="#5B3A45" stroke-width="1.4"/>
+            <line x1="120" y1="49" x2="120" y2="52" stroke="#5B3A45" stroke-width="1.4"/>
+            <line x1="136" y1="55" x2="136" y2="58" stroke="#5B3A45" stroke-width="1.4"/>
+
+            <rect x="102" y="58" width="4" height="26" rx="1.5" fill="#D9B96C"/>
+            <rect x="102" y="64" width="4" height="3" fill="#F3E2AE"/>
+            <rect x="102" y="74" width="4" height="3" fill="#F3E2AE"/>
+
+            <rect x="118" y="52" width="4" height="32" rx="1.5" fill="#D9B96C"/>
+            <rect x="118" y="58" width="4" height="3" fill="#F3E2AE"/>
+            <rect x="118" y="68" width="4" height="3" fill="#F3E2AE"/>
+            <rect x="118" y="78" width="4" height="3" fill="#F3E2AE"/>
+
+            <rect x="134" y="58" width="4" height="26" rx="1.5" fill="#D9B96C"/>
+            <rect x="134" y="64" width="4" height="3" fill="#F3E2AE"/>
+            <rect x="134" y="74" width="4" height="3" fill="#F3E2AE"/>
+          </g>
+
+          <!-- llamas -->
+          <g class="part p5">
+            <g transform="translate(104 55)"><g class="out">
+              <circle cy="-10" r="13" fill="url(#glow)"/>
+              <g class="flame" style="animation-delay:-.3s">
+                <path d="M0,-19 C7,-10 6,-1 0,2 C-6,-1 -7,-10 0,-19Z" fill="#FFB347"/>
+                <path d="M0,-11 C3.5,-6 3,-1.5 0,1 C-3,-1.5 -3.5,-6 0,-11Z" fill="#FFF1B8"/>
+              </g>
+            </g></g>
+            <g transform="translate(120 49)"><g class="out">
+              <circle cy="-10" r="13" fill="url(#glow)"/>
+              <g class="flame" style="animation-delay:-.9s">
+                <path d="M0,-19 C7,-10 6,-1 0,2 C-6,-1 -7,-10 0,-19Z" fill="#FFB347"/>
+                <path d="M0,-11 C3.5,-6 3,-1.5 0,1 C-3,-1.5 -3.5,-6 0,-11Z" fill="#FFF1B8"/>
+              </g>
+            </g></g>
+            <g transform="translate(136 55)"><g class="out">
+              <circle cy="-10" r="13" fill="url(#glow)"/>
+              <g class="flame" style="animation-delay:-1.1s">
+                <path d="M0,-19 C7,-10 6,-1 0,2 C-6,-1 -7,-10 0,-19Z" fill="#FFB347"/>
+                <path d="M0,-11 C3.5,-6 3,-1.5 0,1 C-3,-1.5 -3.5,-6 0,-11Z" fill="#FFF1B8"/>
+              </g>
+            </g></g>
+          </g>
+        </svg>
+
+        <h1 class="greeting">
+          <span class="l1">Feliz cumpleaños</span>
+          <span class="l2">Yeny</span>
+        </h1>
+
+        <p class="wish">Que cada día de este nuevo año te regale motivos para sonreír.</p>
+
+        <button type="button" id="blowBtn" class="btn btn-wish btn-sm rounded-pill px-4 mt-1">Soplar las velas</button>
+        <p class="visually-hidden" id="status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <!-- Puerta izquierda -->
+    <div class="door left" aria-hidden="true">
+      <div class="face front">
+        <div class="art">
+          <div class="frame"></div><div class="frame-2"></div>
+          <span class="dia tl"></span><span class="dia tr"></span><span class="dia bl"></span><span class="dia br"></span>
+          <div class="mono">Y</div>
+          <div class="orn"></div>
+          <div class="para">Para Yeny</div>
+        </div>
+      </div>
+      <div class="face back"></div>
+    </div>
+
+    <!-- Puerta derecha -->
+    <div class="door right" aria-hidden="true">
+      <div class="face front">
+        <div class="art">
+          <div class="frame"></div><div class="frame-2"></div>
+          <span class="dia tl"></span><span class="dia tr"></span><span class="dia bl"></span><span class="dia br"></span>
+          <div class="mono">Y</div>
+          <div class="orn"></div>
+          <div class="para">Para Yeny</div>
+        </div>
+      </div>
+      <div class="face back"></div>
+    </div>
+
+    <div class="sparks" id="sparks"></div>
+    <button type="button" class="open-btn" id="openBtn" aria-label="Abrir la carta de cumpleaños"></button>
+    <p class="hint">Toca la carta para abrirla</p>
+    <button type="button" class="btn btn-link close-card" id="closeBtn" hidden>Cerrar la carta</button>
+  </div>
+
+</main>
+
+<div class="balloons front" id="balloonsFront" aria-hidden="true"></div>
+
+<script>
+  const stage   = document.getElementById('stage');
+  const openBtn = document.getElementById('openBtn');
+  const blowBtn = document.getElementById('blowBtn');
+  const cake    = document.getElementById('cake');
+  const content = document.getElementById('content');
+  const sparks  = document.getElementById('sparks');
+  const status  = document.getElementById('status');
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  function destellos() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colores = ['#F3E2AE', '#D9B96C', '#E8C4B0'];
+    for (let i = 0; i < 30; i++) {
+      const s = document.createElement('span');
+      s.className = 'spark';
+      s.style.left = rand(-8, 108) + '%';
+      s.style.top  = rand(35, 100) + '%';
+      s.style.setProperty('--dx', rand(-30, 30) + 'px');
+      s.style.setProperty('--dy', -rand(90, 240) + 'px');
+      s.style.setProperty('--s',  rand(3, 7) + 'px');
+      s.style.setProperty('--d',  rand(1.8, 3.4) + 's');
+      s.style.setProperty('--dl', rand(.3, 1.4) + 's');
+      s.style.setProperty('--c',  colores[Math.floor(Math.random() * colores.length)]);
+      sparks.appendChild(s);
+    }
+    programar(() => { sparks.innerHTML = ''; }, 5500);
+  }
+
+  const globosAtras   = document.getElementById('balloonsBack');
+  const globosAdelante = document.getElementById('balloonsFront');
+
+  function globos() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colores = ['#E8C4B0', '#D9B96C', '#FAF6EE', '#C9967F', '#3F8A70', '#F3E2AE', '#D9A58F'];
+    const base = Math.min(72, window.innerWidth * .15);
+
+    for (let i = 0; i < 18; i++) {
+      const atras = i % 2 === 0;                       // mitad detrás y mitad delante de la carta
+      const g = document.createElement('div');
+      g.className = 'balloon';
+      g.style.left = rand(1, 90) + '%';
+      g.style.setProperty('--bw',  base * rand(.65, 1) * (atras ? .8 : 1) + 'px');
+      g.style.setProperty('--c',   colores[Math.floor(Math.random() * colores.length)]);
+      g.style.setProperty('--dur', rand(6.5, 10.5) + 's');
+      g.style.setProperty('--dl',  rand(0, 1.8) + 's');
+      g.style.setProperty('--sw',  rand(1.6, 2.8) + 's');
+      g.innerHTML = '<div class="b"></div>';
+      (atras ? globosAtras : globosAdelante).appendChild(g);
+    }
+    programar(() => { globosAtras.innerHTML = ''; globosAdelante.innerHTML = ''; }, 13500);
+  }
+
+  // Temporizadores de la animación: se cancelan si la carta se cierra
+  const timers = [];
+  const programar = (fn, ms) => timers.push(setTimeout(fn, ms));
+
+  const cerrarBtn = document.getElementById('closeBtn');
+
+  let abierta = false;
+  function abrirCarta() {
+    if (abierta) return;
+    abierta = true;
+
+    stage.classList.add('is-open');        // las puertas se abren y aparece la torta
+    openBtn.hidden = true;
+    content.removeAttribute('aria-hidden');
+
+    programar(globos, 250);
+    programar(destellos, 500);
+    programar(() => { cerrarBtn.hidden = false; blowBtn.focus({ preventScroll: true }); }, 2600);
+  }
+  openBtn.addEventListener('click', abrirCarta);
+
+  function cerrarCarta() {
+    if (!abierta) return;
+    abierta = false;
+
+    // detener lo que siga en marcha
+    timers.splice(0).forEach(clearTimeout);
+    sparks.innerHTML = ''; globosAtras.innerHTML = ''; globosAdelante.innerHTML = '';
+    cerrarBtn.hidden = true;
+
+    // 1) el contenido se desvanece  2) las puertas se cierran
+    stage.classList.add('is-closing');
+    setTimeout(() => {
+      stage.classList.remove('is-open', 'is-closing');
+      content.setAttribute('aria-hidden', 'true');
+      cake.classList.remove('blown');
+      blowBtn.textContent = 'Soplar las velas';
+      status.textContent = '';
+      openBtn.hidden = false;
+    }, 450);
+
+    // al terminar de cerrarse, el foco vuelve a la carta
+    setTimeout(() => openBtn.focus({ preventScroll: true }), 2000);
+  }
+  cerrarBtn.addEventListener('click', cerrarCarta);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && abierta && !cerrarBtn.hidden) cerrarCarta();
+  });
+
+  blowBtn.addEventListener('click', () => {
+    const apagadas = cake.classList.toggle('blown');
+    blowBtn.textContent = apagadas ? 'Encender de nuevo' : 'Soplar las velas';
+    status.textContent  = apagadas ? 'Velas apagadas. ¡Que se cumpla tu deseo!' : 'Velas encendidas.';
+  });
+</script>
+</body>
+</html>
